@@ -23,4 +23,51 @@ bool ReservationStation::isBusy() {
     return busy;
 }
 
+bool ReservationStation::isReady() {
+    return (Qj == 0 && Qk == 0);
+}
+
+bool ReservationStation::isExecuting() {
+    if(status == EXECUTING) {
+        return true;
+    }
+    return false;
+}
+
+bool ReservationStation::isWriting() {
+    if(status == WRITING) {
+        return true;
+    }
+    return false;
+}
+
+bool ReservationStation::isCommitting() {
+    if(status == COMMITTING) {
+        return true;
+    }
+    return false;
+}
+
+bool ReservationStation::issued() {
+    if(status == ISSUED) {
+        return true;
+    }
+    return false;
+}
+
+void ReservationStation::setFunctionalUnit(FunctionalUnit *fu) {
+    this->fu = fu;
+}
+
+void ReservationStation::setNextStatus(ReservationStation::Status status) {
+    nextStatus = status;
+}
+
+void ReservationStation::applyNextStatus() {
+    if(nextStatus != EMPTY) {
+        status = nextStatus;
+        nextStatus = EMPTY;
+    }
+}
+
 

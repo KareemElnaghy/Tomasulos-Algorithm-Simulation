@@ -10,14 +10,14 @@ using namespace std;
 
 class ReorderBuffer {
 public:
-    int id;
+    int tag;
     string type;
-    string dest;
+    int dest;
     int16_t value;
     bool ready;
 
     ReorderBuffer();
-    ReorderBuffer(int id, string type, string dest);
+    ReorderBuffer(int tag, string type, int dest);
     void setReady(int16_t value);
 };
 

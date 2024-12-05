@@ -5,21 +5,26 @@
 #ifndef TOMASULOSIMULATOR_FUNCTIONALUNIT_H
 #define TOMASULOSIMULATOR_FUNCTIONALUNIT_H
 #include <string>
+#include <iostream>
+#include <cstdint>
 #include "ReservationStation.h"
 using namespace std;
 
 class FunctionalUnit {
 public:
+    string name;
     string operation;
     int latency;
     int remainingCycles;
     ReservationStation *rs;
 
-    FunctionalUnit(string op, int latency);
+    FunctionalUnit(string name);
     bool isBusy();
     void execute();
+    int getRemCycles();
     void startExec(ReservationStation *rs);
     void completeExec();
+    int16_t getResult(const int &PC);
 };
 
 

@@ -5,14 +5,14 @@
 #include "ReorderBuffer.h"
 
 ReorderBuffer::ReorderBuffer() {
-    id = -1;
+    tag = -1;
     type = "";
-    dest = "";
+    dest = 0;
     value = 0;
     ready = false;
 }
 
-ReorderBuffer::ReorderBuffer(int id, string type, string dest): id(id), type(type), dest(dest) {
+ReorderBuffer::ReorderBuffer(int id, string type, int dest): tag(tag), type(type), dest(dest) {
     value = 0;
     ready = false;
 }

@@ -6,6 +6,7 @@
 #define TOMASULOSIMULATOR_TOMASULOSIMULATOR_H
 #include <iostream>
 #include <vector>
+#include <queue>
 #include <cstdint>
 #include <unordered_map>
 #include "Instruction.h"
@@ -22,12 +23,14 @@ private:
     unordered_map<int, uint16_t> memory;
     vector<int> registers;
     int PC;
-    vector <ReorderBuffer> rob;
+    queue <ReorderBuffer> rob;
     vector<ReservationStation> rsList;
     vector<FunctionalUnit> fuList;
     CommonDataBus cdb;
     int totalCycles;
     int robCapacity;
+    int fuResult;
+    vector<bool> tags;
 
 public:
     TomasuloSimulator();
@@ -43,7 +46,9 @@ private:
     void rollback();
     void printState();
     bool hasFreeRS(Instruction inst);
-
+    void advanceCycle();
+    int getTag();
+    void updateROBEntry(int tag, int16_t value, queue<ReorderBuffer> &rob);
 };
 
 
