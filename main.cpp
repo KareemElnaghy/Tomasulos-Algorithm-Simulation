@@ -4,9 +4,11 @@ using namespace std;
 
 
 int main() {
-    vector<Instruction> instructions = {
-        {"ADDI", 1, 2, 0, 5, 0},
-        {"ADD", 2, 1, 1, 0, 0}};
+    vector<Instruction> instructions;
+
+    Instruction inst1("ADD", 1, 2, 3, 0, 0);
+
+    instructions.push_back(inst1);
 
     unordered_map<int, uint16_t> memory;
     int startingPC = 0;

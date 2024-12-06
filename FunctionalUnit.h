@@ -20,6 +20,7 @@ public:
     int16_t operand1;
     int16_t operand2;
     int16_t A;
+    bool busy;
     //ReservationStation *rs;
 
     FunctionalUnit(string name, string unit);

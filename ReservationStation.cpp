@@ -18,6 +18,7 @@ void ReservationStation::clear() {
     Qk = 0;
     A = 0;
     destination = 0;
+    readyToWrite = false;
 }
 
 bool ReservationStation::isBusy() {
@@ -106,6 +107,10 @@ string ReservationStation::getNextStatus() {
         return "COMMITTING";
     }
     return "";
+}
+
+bool ReservationStation::isReadyToWrite() {
+    return readyToWrite;
 }
 
 

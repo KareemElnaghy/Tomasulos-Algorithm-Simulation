@@ -25,7 +25,7 @@ FunctionalUnit::FunctionalUnit(string name, string unit): name(name), unit(unit)
 }
 
 bool FunctionalUnit::isBusy() {
-    return (remainingCycles>0);
+    return (busy);
 }
 
 void FunctionalUnit::execute() {
@@ -35,8 +35,8 @@ void FunctionalUnit::execute() {
 }
 
 void FunctionalUnit::startExec() {
-    //this->rs = station;
     remainingCycles = latency;
+    busy = true;
 }
 
 void FunctionalUnit::flush() {
@@ -46,6 +46,7 @@ void FunctionalUnit::flush() {
     operand2 = 0;
     A = 0;
     //rs = nullptr;
+    busy = false;
 }
 
 int FunctionalUnit::getRemCycles() {

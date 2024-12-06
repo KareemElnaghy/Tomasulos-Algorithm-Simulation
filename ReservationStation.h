@@ -25,10 +25,11 @@ public:
     int16_t A;      // immediate value/address
     int destination;    // destination register
     int robTag;     // ROB tag
-    enum Status  { EMPTY, ISSUED, EXECUTING, WRITING, COMMITTING };  // status of the RS;
+    enum Status  { EMPTY, ISSUED, EXECUTING, WRITING, COMMITTING};  // status of the RS;
     Status status = EMPTY;
     Status nextStatus = EMPTY;
     int instPC;     // PC of the instruction
+    bool readyToWrite = false;
     FunctionalUnit *fu; // functional unit executing the instruction
 
     ReservationStation(string name, string unit);
@@ -40,6 +41,7 @@ public:
     bool isExecuting();
     bool isWriting();
     bool isCommitting();
+    bool isReadyToWrite();
     void setNextStatus(Status status);
     void applyNextStatus();
     bool isEmpty();
