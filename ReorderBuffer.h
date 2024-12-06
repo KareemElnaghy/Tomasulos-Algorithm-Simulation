@@ -15,7 +15,7 @@ public:
     int dest;
     int16_t value;
     bool ready;
-    int actualPC;
+    int actualPC; // PC+1
     int remCycles;
 
     ReorderBuffer();

@@ -64,7 +64,7 @@ int16_t FunctionalUnit::getResult(int instPC, const int &PC) {
         return ~(operand1 & operand2);
     }
     else if (operation == "BEQ") {
-        return (operand1 == operand2) ? (instPC + 1 + A) : PC; // if equal, branch to A, else go to next instruction
+        return (operand1 == operand2) ? (instPC + 1 + A) : PC+1; // if equal, branch to A, else go to next instruction
     }
     else if (operation == "LOAD") {
         return operand1 + A;
