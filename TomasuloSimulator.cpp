@@ -102,9 +102,10 @@ TomasuloSimulator::TomasuloSimulator(vector<Instruction> instructions, unordered
 : instructions(instructions), memory(memory), PC(startingPC), robCapacity(robCapacity)
 {
     totalCycles = 0;
-    registers.resize(8, 0); // TODO: hard wire register 0 to be zero
+    registers.resize(8, 0);
     registers[4] = 5;
     registers[5] = 10;
+    memory[1] = 15;
     destRegs.resize(8, 0);
     robRegTable.resize(8, 0);
     fuResult = 0;
@@ -139,13 +140,16 @@ void TomasuloSimulator::simulate() {
 
         cout<<"RESERVATION STATIONS"<<endl;
         for (auto &rs : rsList) {
-            if (rs.name == "ADD/ADDI" && (rs.unit == "1" || rs.unit == "2" || rs.unit == "3")) {
+            if (rs.name == "STORE" || rs.name == "ADD/ADDI" || rs.name == "MUL"){
                 printReservationStation(rs);
             }
         }
+        printROB(rob.front());
+        printRegisters(registers);
+
 
     }
-
+    cout<<"Memory " << memory[0]<<endl;
     printRegisters(registers);
 }
 
@@ -167,6 +171,11 @@ void TomasuloSimulator::issue() {
 
     // If ROB is full or no free RS, stall
     if (rob.size() >= robCapacity || !hasFreeRS(inst)) return;
+    if(inst.rd == 0 && inst.op != "BEQ" && inst.op != "STORE")
+    {
+        PC++;
+        return;
+    }
 
 
     // Find a free RS, issue the instruction, and increment PC
@@ -174,37 +183,72 @@ void TomasuloSimulator::issue() {
         if (rs.issued() && !rs.isBusy()) { // If RS is not busy and operation matches
 
             int tag = getTag();
-            ReorderBuffer robEntry(tag, inst.op, inst.rd, PC+1);  // Create a new ROB entry
-            rob.push(robEntry); // Push the ROB entry to the ROB
-            rs.robTag = tag;
-            destRegs[inst.rd] = tag;
-            robRegTable[inst.rd] = tag;
-            rs.busy = true;
-            rs.op = inst.op;
-            rs.destination = inst.rd;
-            rs.A = inst.offset;
-            rs.instPC = PC;
-            rs.reg1 = inst.rs1;
-            rs.reg2 = inst.rs2;
+            if(rs.name == "STORE")
+            {
+                ReorderBuffer robEntry(tag, inst.op, inst.rs1, PC+1);  // Create a new ROB entry6
+                rob.push(robEntry); // Push the ROB entry to the ROB
+                rs.robTag = tag;
+                rs.busy = true;
+                rs.op = inst.op;
+                rs.A = inst.offset;
+                rs.instPC = PC;
+                rs.reg1 = inst.rs1;
+                rs.reg2 = inst.rs2;
 
-            // Check if rs1 is ready
-            rs.Qj = destRegs[inst.rs1]; // FIXME: Check rs1/rs2 if its -1 first
+                // Check if rs1 is ready
+                rs.Qj = destRegs[inst.rs1]; // FIXME: Check rs1/rs2 if its -1 first
 
-            // Check if rs2 is ready
-            rs.Qk = destRegs[inst.rs2];
+                // Check if rs2 is ready
+                rs.Qk = destRegs[inst.rs2];
 
-            // Set Vj and Vk
-            if (inst.rs1 != -1) {   // If rs1 is not -1, set Vj and Qj
-                rs.Vj = registers[inst.rs1];
-            } else {
-                rs.Vj = 0;
+                // Set Vj and Vk
+                if (inst.rs1 != -1) {   // If rs1 is not -1, set Vj and Qj
+                    rs.Vj = registers[inst.rs1];
+                } else {
+                    rs.Vj = 0;
+                }
+
+                if (inst.rs2 != -1) {   // If rs2 is not -1, set Vk and Qk
+                    rs.Vk = registers[inst.rs2];
+                } else {
+                    rs.Vk = 0;
+                }
             }
+            else {
+                ReorderBuffer robEntry(tag, inst.op, inst.rd, PC + 1);
+                rob.push(robEntry); // Push the ROB entry to the ROB
+                rs.robTag = tag;
+                destRegs[inst.rd] = tag;
+                robRegTable[inst.rd] = tag;
+                rs.busy = true;
+                rs.op = inst.op;
+                rs.destination = inst.rd;
+                rs.A = inst.offset;
+                rs.instPC = PC;
+                rs.reg1 = inst.rs1;
+                rs.reg2 = inst.rs2;
 
-            if (inst.rs2 != -1) {   // If rs2 is not -1, set Vk and Qk
-                rs.Vk = registers[inst.rs2];
-            } else {
-                rs.Vk = 0;
-            }
+                // Check if rs1 is ready
+                rs.Qj = destRegs[inst.rs1]; // FIXME: Check rs1/rs2 if its -1 first
+
+                // Check if rs2 is ready
+                rs.Qk = destRegs[inst.rs2];
+
+                // Set Vj and Vk
+                if (inst.rs1 != -1) {   // If rs1 is not -1, set Vj and Qj
+                    rs.Vj = registers[inst.rs1];
+                } else {
+                    rs.Vj = 0;
+                }
+
+                if (inst.rs2 != -1) {   // If rs2 is not -1, set Vk and Qk
+                    rs.Vk = registers[inst.rs2];
+                } else {
+                    rs.Vk = 0;
+                }
+            }  // Create a new ROB entry
+
+
             PC++;   // Increment PC
             break;
         }
@@ -212,11 +256,16 @@ void TomasuloSimulator::issue() {
 
 
     for(auto &rs: rsList) {
-        if (!rs.isBusy() && (rs.name.find(inst.op) != string::npos && PC < instructions.size()) )
+        if(PC < instructions.size())
         {
-            rs.setNextStatus(ReservationStation::ISSUED);
-            break;
+            Instruction nextInst = instructions[PC];
+            if (!rs.isBusy() && (rs.name.find(nextInst.op) != string::npos) )
+            {
+                rs.setNextStatus(ReservationStation::ISSUED);
+                break;
+            }
         }
+
     }
 }
 
@@ -254,6 +303,14 @@ void TomasuloSimulator::execute() {
 
         }
 
+        if(rs.isExecuting() && rs.fu->getRemCycles() == 0 && rs.op == "STORE")
+        {
+            int result = rs.fu->getResult(rs.instPC, PC);
+            updateROBEntry(rs.robTag, result, rob);
+            rs.setNextStatus(ReservationStation::WRITING);
+            continue;
+        }
+
 
         if (rs.isExecuting() && rs.fu->getRemCycles() == 0) {
             if(!cdb.isBusy())
@@ -275,7 +332,13 @@ void TomasuloSimulator::write() {
     for (auto &rs : rsList) {
 
         // If RS is writing, update ROB entry and clear RS
-        if (rs.isWriting()) {
+        if(rs.op == "STORE" && rs.isWriting())
+        {
+            rs.fu->flush();
+            rs.setNextStatus(ReservationStation::EMPTY);
+            rs.clear();
+        }
+        else if (rs.isWriting()) {
             rs.fu->flush();
             updateROBEntry(rs.robTag, cdb.value, rob);
             for(auto &curRS: rsList) {
@@ -298,10 +361,8 @@ void TomasuloSimulator::write() {
     for(auto &rs: rsList) {
         if(rs.isReadyToWrite() && !cdb.isBusy())
         {
-            cout<<"Current RS"<<rs.name + rs.unit<<endl;
             printFU(*rs.fu);
             fuResult = rs.fu->getResult(rs.instPC, PC);
-            cout<<"Result for "<<rs.name + rs.unit<<" is "<<fuResult<<endl;
             rs.setNextStatus(ReservationStation::WRITING);
             cdb.writeToCDB(fuResult, rs.robTag);
         }
@@ -318,8 +379,21 @@ void TomasuloSimulator::write() {
 void TomasuloSimulator::commit() {
     if (!rob.empty() && rob.front().ready) {    // If ROB is not empty and the front entry is ready
         ReorderBuffer entry = rob.front();
+        if(entry.type == "STORE" && entry.remCycles > 0)
+        {
+            decrementRemCycle(entry.tag, rob);
+            return;
+        }
+
         rob.pop();
-        registers[entry.dest] = entry.value;
+        if(entry.type == "STORE")
+        {
+            memory[entry.value] = registers[entry.dest];
+        }
+        else{
+            registers[entry.dest] = entry.value;
+        }
+
         tags[entry.tag] = false;
         robRegTable[entry.dest] = 0;
 
@@ -421,9 +495,22 @@ void TomasuloSimulator::updateROBEntry(int tag, int16_t value, queue<ReorderBuff
     }
     rob = temp;
 
-
-
 }
+
+void TomasuloSimulator::decrementRemCycle(int tag, queue<ReorderBuffer> &rob)
+{
+    queue<ReorderBuffer> temp;
+    while(!rob.empty()) {
+        ReorderBuffer entry = rob.front();
+        rob.pop();
+        if(entry.tag == tag) {
+            entry.remCycles--;
+        }
+        temp.push(entry);
+    }
+    rob = temp;
+}
+
 
 bool TomasuloSimulator::isRSListEmpty() {
     for(auto &rs: rsList) {

@@ -15,6 +15,9 @@ ReorderBuffer::ReorderBuffer() {
 ReorderBuffer::ReorderBuffer(int tag, string type, int dest, int actualPC): tag(tag), type(type), dest(dest), actualPC(actualPC) {
     value = 0;
     ready = false;
+    remCycles = 0;
+    if(type == "STORE")
+        remCycles = 4;
 }
 
 void ReorderBuffer::setReady(int16_t value) {

@@ -67,10 +67,10 @@ int16_t FunctionalUnit::getResult(int instPC, const int &PC) {
         return (operand1 == operand2) ? (instPC + 1 + A) : PC; // if equal, branch to A, else go to next instruction
     }
     else if (operation == "LOAD") {
-        return operand1 + A;
+        return operand2 + A;
     }
     else if (operation == "STORE") {
-        return operand1 + A;
+        return operand2 + A;
     }
     else if (operation == "CALL") {    // TODO: do call later
         return 0;

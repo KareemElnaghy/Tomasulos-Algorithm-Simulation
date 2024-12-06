@@ -11,11 +11,12 @@ using namespace std;
 class ReorderBuffer {
 public:
     int tag;
-    string type;
+    string type; // instruction operation
     int dest;
     int16_t value;
     bool ready;
     int actualPC;
+    int remCycles;
 
     ReorderBuffer();
     ReorderBuffer(int tag, string type, int dest, int actualPC);

@@ -53,6 +53,7 @@ private:
     void updateROBEntry(int tag, int16_t value, queue<ReorderBuffer> &rob);
     bool isRSListEmpty();
     bool isFUListEmpty();
+    void decrementRemCycle(int tag, queue<ReorderBuffer> &rob);
 };
 
 
