@@ -98,14 +98,11 @@ void printInstruction(Instruction inst)
     }
 }
 
-TomasuloSimulator::TomasuloSimulator(vector<Instruction> instructions, unordered_map<int, uint16_t> memory, int startingPC, int robCapacity, unordered_map<string, int> stationCount)
+TomasuloSimulator::TomasuloSimulator(vector<Instruction> instructions, vector<int16_t> memory, int startingPC, int robCapacity, unordered_map<string, int> stationCount)
 : instructions(instructions), memory(memory), PC(startingPC), robCapacity(robCapacity)
 {
     totalCycles = 0;
     registers.resize(8, 0);
-    registers[4] = 5;
-    registers[5] = 10;
-    memory[1] = 15;
     destRegs.resize(8, 0);
     robRegTable.resize(8, 0);
     fuResult = 0;
@@ -140,17 +137,20 @@ void TomasuloSimulator::simulate() {
 
         cout<<"RESERVATION STATIONS"<<endl;
         for (auto &rs : rsList) {
-            if (rs.name == "STORE" || rs.name == "ADD/ADDI" || rs.name == "MUL"){
+            if (rs.name+rs.unit == "LOAD1" || rs.name+rs.unit == "STORE1" || rs.name+rs.unit == "ADD/ADDI1" || rs.name+rs.unit == "MUL1") {
                 printReservationStation(rs);
             }
         }
         printROB(rob.front());
         printRegisters(registers);
 
-
+//        if(counter > 25) {
+//            break;
+//        }
     }
-    cout<<"Memory " << memory[0]<<endl;
+
     printRegisters(registers);
+    cout<<"Memory "<<memory[0]<<endl;
 }
 
 
@@ -311,6 +311,12 @@ void TomasuloSimulator::execute() {
             continue;
         }
 
+        if(rs.isExecuting() && rs.fu->getRemCycles() == 0 && rs.op == "LOAD")
+        {
+            rs.setNextStatus(ReservationStation::WRITING);
+            continue;
+        }
+
 
         if (rs.isExecuting() && rs.fu->getRemCycles() == 0) {
             if(!cdb.isBusy())
@@ -337,6 +343,35 @@ void TomasuloSimulator::write() {
             rs.fu->flush();
             rs.setNextStatus(ReservationStation::EMPTY);
             rs.clear();
+            continue;
+        }
+        else if(rs.op == "LOAD" && rs.isWriting() && rs.remCyclesLoad > 0)
+        {
+            rs.remCyclesLoad--;
+            rs.setNextStatus(ReservationStation::WRITING);
+            continue;
+        }
+        else if(rs.op == "LOAD" && rs.isWriting() && rs.remCyclesLoad == 0)
+        {
+            int address = rs.fu->getResult(rs.instPC, PC);
+            cdb.writeToCDB(memory[address], rs.robTag);
+            updateROBEntry(rs.robTag, memory[address], rob);
+            cout<<"TAG: "<<rs.robTag<<" VALUE: "<<memory[address]<<" ADDRESS: "<<address<<endl;
+            cout<<"LOADING VALUE: "<<memory[5]<<endl;
+            for(auto &curRS: rsList) {
+                if(curRS.Qj == rs.robTag) {
+                    curRS.Vj = cdb.value;
+                }
+                if(curRS.Qk == rs.robTag) {
+                    curRS.Vk = cdb.value;
+                }
+            }
+            rs.fu->flush();
+            rs.setNextStatus(ReservationStation::EMPTY);
+            destRegs[rs.destination] = 0;
+            rs.clear();
+            cdb.clear();
+            continue;
         }
         else if (rs.isWriting()) {
             rs.fu->flush();
@@ -353,6 +388,7 @@ void TomasuloSimulator::write() {
             destRegs[rs.destination] = 0;
             rs.clear();
             cdb.clear();
+            continue;
         }
     }
 

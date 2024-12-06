@@ -16,7 +16,7 @@ ReorderBuffer::ReorderBuffer(int tag, string type, int dest, int actualPC): tag(
     value = 0;
     ready = false;
     remCycles = 0;
-    if(type == "STORE")
+    if(type == "STORE" || type == "LOAD")
         remCycles = 4;
 }
 

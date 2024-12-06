@@ -7,6 +7,8 @@
 ReservationStation::ReservationStation(string name, string unit): busy(false), op(""), Vj(0), Vk(0), Qj(0), Qk(0), A(0), destination(0) {
     this->name = name;
     this->unit = unit;
+
+    remCyclesLoad = 4;
 }
 
 void ReservationStation::clear() {
@@ -19,6 +21,8 @@ void ReservationStation::clear() {
     A = 0;
     destination = 0;
     readyToWrite = false;
+    remCyclesLoad = 4;
+
 }
 
 bool ReservationStation::isBusy() {

@@ -20,7 +20,7 @@ using namespace std;
 class TomasuloSimulator {
 private:
     vector<Instruction> instructions;
-    unordered_map<int, uint16_t> memory;
+    vector<int16_t> memory;
     vector<int> registers;
     int PC;
     queue <ReorderBuffer> rob;
@@ -36,7 +36,7 @@ private:
 
 public:
     TomasuloSimulator();
-    TomasuloSimulator(vector<Instruction> instructions, unordered_map<int, uint16_t> memory, int startingPC, int robCapacity, unordered_map<string, int> stationCount);
+    TomasuloSimulator(vector<Instruction> instructions, vector <int16_t> memory, int startingPC, int robCapacity, unordered_map<string, int> stationCount);
 
     void simulate();
 

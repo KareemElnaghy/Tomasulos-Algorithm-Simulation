@@ -31,6 +31,7 @@ public:
     int instPC;     // PC of the instruction
     bool readyToWrite = false;
     FunctionalUnit *fu; // functional unit executing the instruction
+    int remCyclesLoad;
 
     ReservationStation(string name, string unit);
     void setFunctionalUnit(FunctionalUnit *fu);
