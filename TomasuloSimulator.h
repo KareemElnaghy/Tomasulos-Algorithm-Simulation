@@ -26,6 +26,8 @@ private:
     queue <ReorderBuffer> rob;
     vector<ReservationStation> rsList;
     vector<FunctionalUnit> fuList;
+    vector<int> destRegs;
+    vector<int> robRegTable;
     CommonDataBus cdb;
     int totalCycles;
     int robCapacity;
@@ -43,12 +45,14 @@ private:
     void execute();
     void write();
     void commit();
-    void rollback();
+    void rollback(int correctPC);
     void printState();
     bool hasFreeRS(Instruction inst);
     void advanceCycle();
     int getTag();
     void updateROBEntry(int tag, int16_t value, queue<ReorderBuffer> &rob);
+    bool isRSListEmpty();
+    bool isFUListEmpty();
 };
 
 

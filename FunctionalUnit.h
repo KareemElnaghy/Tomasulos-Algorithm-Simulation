@@ -13,18 +13,23 @@ using namespace std;
 class FunctionalUnit {
 public:
     string name;
+    string unit;
     string operation;
     int latency;
     int remainingCycles;
-    ReservationStation *rs;
+    int16_t operand1;
+    int16_t operand2;
+    int16_t A;
+    //ReservationStation *rs;
 
-    FunctionalUnit(string name);
+    FunctionalUnit(string name, string unit);
     bool isBusy();
     void execute();
     int getRemCycles();
-    void startExec(ReservationStation *rs);
-    void completeExec();
-    int16_t getResult(const int &PC);
+    void startExec();
+    void flush();
+    int16_t getResult(int instPC, const int &PC);
+    bool isEmpty();
 };
 
 

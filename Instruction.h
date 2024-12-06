@@ -11,9 +11,7 @@ class Instruction {
 public:
     string op;
     int rd, rs1, rs2;
-    int16_t imm;
     int16_t offset;
-    //int16_t address;
     int16_t label;
 
 };

@@ -11,11 +11,11 @@ class CommonDataBus {
 public:
     int16_t value;
     int tag;
-    bool busy;
+    bool currBusy;
 
     CommonDataBus();
     void writeToCDB(int16_t value, int tag);
-    bool isBusy();
+    bool isBusy() const;
     void clear();
 
 

@@ -4,7 +4,7 @@
 
 #include "FunctionalUnit.h"
 
-FunctionalUnit::FunctionalUnit(string name): name(name) {
+FunctionalUnit::FunctionalUnit(string name, string unit): name(name), unit(unit), remainingCycles(0), operand1(0), operand2(0), A(0) {
     operation = "";
     if(name == "ADD/ADDI")
         latency = 2;
@@ -34,47 +34,57 @@ void FunctionalUnit::execute() {
     }
 }
 
-void FunctionalUnit::startExec(ReservationStation *station) {
-    this->rs = station;
+void FunctionalUnit::startExec() {
+    //this->rs = station;
     remainingCycles = latency;
 }
 
-void FunctionalUnit::completeExec() {
-    if(rs!=nullptr) {
-        rs->clear();
-    }
+void FunctionalUnit::flush() {
+    operation = "";
+    remainingCycles = 0;
+    operand1 = 0;
+    operand2 = 0;
+    A = 0;
+    //rs = nullptr;
 }
 
 int FunctionalUnit::getRemCycles() {
     return remainingCycles;
 }
 
-int16_t FunctionalUnit::getResult(const int &PC) {
-    if (rs->op == "ADD") {
-        return rs->Vj + rs->Vk;
-    } else if (rs->op == "ADDI") {
-        return rs->Vj + rs->A;
-    } else if (rs->op == "MUL") {
-        return rs->Vj * rs->Vk;
-    } else if (rs->op == "NAND") {
-        return ~(rs->Vj & rs->Vk);
+int16_t FunctionalUnit::getResult(int instPC, const int &PC) {
+    if (operation == "ADD") {
+        return operand1 + operand2;
+    } else if (operation == "ADDI") {
+        return operand1 + A;
+    } else if (operation == "MUL") {
+        return operand1 * operand2;
+    } else if (operation == "NAND") {
+        return ~(operand1 & operand2);
     }
-    else if (rs->op == "BEQ") {
-        return (rs->Vj == rs->Vk) ? (rs->A + PC) : PC+1;    // Do branch later
+    else if (operation == "BEQ") {
+        return (operand1 == operand2) ? (instPC + 1 + A) : PC; // if equal, branch to A, else go to next instruction
     }
-    else if (rs->op == "LOAD") {
-        return rs->Vj + rs->A;
+    else if (operation == "LOAD") {
+        return operand1 + A;
     }
-    else if (rs->op == "STORE") {
-        return rs->Vj + rs->A;
+    else if (operation == "STORE") {
+        return operand1 + A;
     }
-    else if (rs->op == "CALL") {    // do call later
-        return rs->A;
+    else if (operation == "CALL") {    // TODO: do call later
+        return 0;
     }
-    else if (rs->op == "RET") { // do ret later
-        return rs->A;
+    else if (operation == "RET") { // TODO: do ret later
+        return 0;
     }
     else {
         return 0;
     }
+}
+
+bool FunctionalUnit::isEmpty() {
+    if(operation == "" && remainingCycles == 0) {
+        return true;
+    }
+    return false;
 }

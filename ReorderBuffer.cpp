@@ -12,7 +12,7 @@ ReorderBuffer::ReorderBuffer() {
     ready = false;
 }
 
-ReorderBuffer::ReorderBuffer(int id, string type, int dest): tag(tag), type(type), dest(dest) {
+ReorderBuffer::ReorderBuffer(int tag, string type, int dest, int actualPC): tag(tag), type(type), dest(dest), actualPC(actualPC) {
     value = 0;
     ready = false;
 }

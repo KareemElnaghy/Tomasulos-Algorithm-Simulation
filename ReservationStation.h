@@ -6,14 +6,18 @@
 #define TOMASULOSIMULATOR_RESERVATIONSTATION_H
 #include <string>
 #include "FunctionalUnit.h"
+class FunctionalUnit;
 using namespace std;
 
 
 class ReservationStation {
 public:
     string name;    // name of the RS
+    string unit;      // unit number
     bool busy;      // is the RS busy
     string op;      // operation
+    int reg1;
+    int reg2;
     int16_t Vj;     // value of operand j
     int16_t Vk;     // value of operand k
     int Qj;     // reservation station holding the value of operand j
@@ -24,10 +28,10 @@ public:
     enum Status  { EMPTY, ISSUED, EXECUTING, WRITING, COMMITTING };  // status of the RS;
     Status status = EMPTY;
     Status nextStatus = EMPTY;
-
+    int instPC;     // PC of the instruction
     FunctionalUnit *fu; // functional unit executing the instruction
 
-    ReservationStation(string name);
+    ReservationStation(string name, string unit);
     void setFunctionalUnit(FunctionalUnit *fu);
     void clear();
     bool isBusy();
@@ -38,7 +42,9 @@ public:
     bool isCommitting();
     void setNextStatus(Status status);
     void applyNextStatus();
-
+    bool isEmpty();
+    string getStatus();
+    string getNextStatus();
 
 
 };

@@ -15,9 +15,10 @@ public:
     int dest;
     int16_t value;
     bool ready;
+    int actualPC;
 
     ReorderBuffer();
-    ReorderBuffer(int tag, string type, int dest);
+    ReorderBuffer(int tag, string type, int dest, int actualPC);
     void setReady(int16_t value);
 };
 
