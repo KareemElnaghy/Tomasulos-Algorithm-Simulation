@@ -112,6 +112,7 @@ void printCycleMap(Instruction inst)
 }
 
 
+
 TomasuloSimulator::TomasuloSimulator(vector<Instruction> instructions, vector<int16_t> memory, int startingPC, int robCapacity, unordered_map<string, int> stationCount)
 : instructions(instructions), memory(memory), PC(startingPC), robCapacity(robCapacity)
 {
@@ -147,6 +148,13 @@ void TomasuloSimulator::simulate() {
         execute();      // Execute the instruction
         write();        // Write the result to the CDB
         commit();       // Commit the result to the register
+
+        for(auto &rs: rsList) {
+            if(rs.getStatus() == "ISSUED")
+            {
+                instructions[rs.instPC].setIssueCycle(totalCycles);
+            }
+        }
         totalCycles++;  // Increment the cycle count
 
         for(auto &rs: rsList) {
@@ -378,7 +386,6 @@ void TomasuloSimulator::execute() {
 
                     FunctionalUnit *fuPointer = &fu;
                     rs.setFunctionalUnit(fuPointer);
-
                     fu.startExec();
                     break;
                 }
@@ -386,15 +393,20 @@ void TomasuloSimulator::execute() {
         }
 
 
+
         // If RS is executing and FU is not done
 
         if (rs.isExecuting() && rs.fu->getRemCycles() > 0) {
+            if(rs.fu->remainingCycles == rs.fu->latency - 1)
+            {
+                instructions[rs.instPC].setStartExecCycle(totalCycles-1); // FIXME: set start exec cycle
+            }
             rs.setNextStatus(ReservationStation::EXECUTING);
             rs.fu->execute();
-
         }
 
         if(rs.isExecuting() && rs.fu->remainingCycles == 0) {
+            instructions[rs.instPC].setFinishExecCycle(totalCycles); // FIXME: set finish exec cycle
             if (rs.op == "STORE") {
                 int result = rs.fu->getResult(rs.instPC, PC);
                 updateROBEntry(rs.robTag, result, rob);
@@ -453,12 +465,13 @@ void TomasuloSimulator::write() {
                 rs.setNextStatus(ReservationStation::EMPTY);
                 rs.clear();
                 cdb.currBusy = false;
-                instructions[rs.instPC].setWriteCycle(totalCycles);
+                instructions[rs.instPC].setWriteCycle(totalCycles); // FIXME: set write cycle
                 continue;
             } else if (rs.op == "LOAD" && rs.remCyclesLoad > 0) {
                 rs.remCyclesLoad--;
                 rs.setNextStatus(ReservationStation::WRITING);
                 cdb.currBusy = false;
+                instructions[rs.instPC].setWriteCycle(totalCycles); // FIXME: set write cycle
                 continue;
             } else if (rs.op == "LOAD" && rs.remCyclesLoad == 0) {
                 int address = rs.fu->getResult(rs.instPC, PC);
@@ -500,6 +513,7 @@ void TomasuloSimulator::write() {
                 rs.setNextStatus(ReservationStation::EMPTY);
                 rs.clear();
                 cdb.currBusy = false;
+                instructions[rs.instPC].setWriteCycle(totalCycles); // FIXME: set write cycle
                 continue;
             } else if (rs.op == "BEQ") {
                 rs.fu->flush();
@@ -507,6 +521,7 @@ void TomasuloSimulator::write() {
                 rs.setNextStatus(ReservationStation::EMPTY);
                 rs.clear();
                 cdb.currBusy = false;
+                instructions[rs.instPC].setWriteCycle(totalCycles); // FIXME: set write cycle
                 continue;
             } else if (rs.op == "CALL") {
                 updateROBEntry(rs.robTag, cdb.value, cdb.extraValue, rob);
@@ -514,6 +529,7 @@ void TomasuloSimulator::write() {
                 rs.fu->flush();
                 rs.clear();
                 cdb.currBusy = false;
+                instructions[rs.instPC].setWriteCycle(totalCycles); // FIXME: set write cycle
                 continue;
             } else if (rs.op == "RET") {
                 updateROBEntry(rs.robTag, cdb.value, rob);
@@ -521,6 +537,7 @@ void TomasuloSimulator::write() {
                 rs.fu->flush();
                 rs.clear();
                 cdb.currBusy = false;
+                instructions[rs.instPC].setWriteCycle(totalCycles); // FIXME: set write cycle
                 continue;
             } else {
                 rs.fu->flush();
@@ -594,6 +611,7 @@ void TomasuloSimulator::commit() {
         }
 
         rob.pop();
+        instructions[entry.actualPC-1].setCommitCycle(totalCycles); // FIXME: set commit cycle
         totalInstructions++;
         if(entry.type == "BEQ")
         {
