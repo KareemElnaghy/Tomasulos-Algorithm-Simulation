@@ -19,6 +19,9 @@ void ReservationStation::clear() {
     Qj = 0;
     Qk = 0;
     A = 0;
+    if(fu != nullptr) {
+        fu->flush();
+    }
     fu = nullptr;
     destination = 0;
     readyToWrite = false;
@@ -74,6 +77,8 @@ void ReservationStation::setNextStatus(ReservationStation::Status status) {
 
 void ReservationStation::applyNextStatus() {
     if ((nextStatus == EMPTY && status == WRITING) || nextStatus != EMPTY) {
+        if(readyToWrite)
+            return;
         status = nextStatus;
         nextStatus = EMPTY;
     }

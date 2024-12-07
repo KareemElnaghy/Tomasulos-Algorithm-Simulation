@@ -29,10 +29,15 @@ private:
     vector<int> destRegs;
     vector<int> robRegTable;
     CommonDataBus cdb;
-    int totalCycles;
     int robCapacity;
     int fuResult;
     vector<bool> tags;
+    // Performance Metrics
+    int totalCycles;
+    int totalInstructions;
+    int totalBranchMispredictions;
+    int totalBranches;
+
 
 public:
     TomasuloSimulator();
@@ -51,6 +56,8 @@ private:
     void advanceCycle();
     int getTag();
     void updateROBEntry(int tag, int16_t value, queue<ReorderBuffer> &rob);
+    void updateROBEntry(int tag, int16_t value, int16_t extraValue, queue<ReorderBuffer> &rob);
+    void makeReady(int tag, queue<ReorderBuffer> &rob);
     bool isRSListEmpty();
     bool isFUListEmpty();
     void decrementRemCycle(int tag, queue<ReorderBuffer> &rob);

@@ -45,7 +45,6 @@ void FunctionalUnit::flush() {
     operand1 = 0;
     operand2 = 0;
     A = 0;
-    //rs = nullptr;
     busy = false;
 }
 
@@ -53,7 +52,7 @@ int FunctionalUnit::getRemCycles() {
     return remainingCycles;
 }
 
-int16_t FunctionalUnit::getResult(int instPC, const int &PC) {
+int16_t FunctionalUnit::getResult(int instPC,  const int &PC) {
     if (operation == "ADD") {
         return operand1 + operand2;
     } else if (operation == "ADDI") {
@@ -72,11 +71,11 @@ int16_t FunctionalUnit::getResult(int instPC, const int &PC) {
     else if (operation == "STORE") {
         return operand2 + A;
     }
-    else if (operation == "CALL") {    // TODO: do call later
-        return 0;
+    else if (operation == "CALL") {
+        return A;
     }
-    else if (operation == "RET") { // TODO: do ret later
-        return 0;
+    else if (operation == "RET") {
+        return operand1;
     }
     else {
         return 0;

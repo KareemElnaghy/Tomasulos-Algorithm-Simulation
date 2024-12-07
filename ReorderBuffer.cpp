@@ -9,11 +9,13 @@ ReorderBuffer::ReorderBuffer() {
     type = "";
     dest = 0;
     value = 0;
+    extraValue = 0;
     ready = false;
 }
 
 ReorderBuffer::ReorderBuffer(int tag, string type, int dest, int actualPC): tag(tag), type(type), dest(dest), actualPC(actualPC) {
     value = 0;
+    extraValue = 0;
     ready = false;
     remCycles = 0;
     if(type == "STORE" || type == "LOAD")
@@ -22,5 +24,7 @@ ReorderBuffer::ReorderBuffer(int tag, string type, int dest, int actualPC): tag(
 
 void ReorderBuffer::setReady(int16_t value) {
     this->value = value;
-    ready = true;
+    willBeReady = true;
 }
+
+

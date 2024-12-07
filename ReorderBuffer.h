@@ -14,7 +14,9 @@ public:
     string type; // instruction operation
     int dest;
     int16_t value;
-    bool ready;
+    int16_t extraValue;
+    bool ready = false;
+    bool willBeReady = false;
     int actualPC; // PC+1
     int remCycles;
 
