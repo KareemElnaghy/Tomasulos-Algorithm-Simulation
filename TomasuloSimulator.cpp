@@ -66,37 +66,42 @@ void printRegisters(vector<int> registers)
     cout << endl;
 }
 
-void printInstruction(Instruction inst)
+void printInstruction(const Instruction& inst)
 {
-    if(inst.op == "ADD" || inst.op == "MUL" || inst.op == "NAND")
+    if (inst.op == "ADD" || inst.op == "MUL" || inst.op == "NAND")
     {
         cout << inst.op << " R" << inst.rd << ", R" << inst.rs1 << ", R" << inst.rs2 << endl;
     }
-    else if(inst.op == "ADDI")
+    else if (inst.op == "ADDI")
     {
-        cout << inst.op << " R" << inst.rd << ", R" << inst.rs1 << ", #" << inst.offset << endl;
+        cout << inst.op << " R" << inst.rd << ", R" << inst.rs1 << ", " << inst.offset << endl;
     }
-    else if(inst.op == "BEQ")
+    else if (inst.op == "BEQ")
     {
-        cout << inst.op << " R" << inst.rs1 << ", R" << inst.rs2 << ", #" << inst.offset << endl;
+        cout << inst.op << " R" << inst.rs1 << ", R" << inst.rs2 << ", " << inst.offset << endl;
     }
-    else if(inst.op == "LOAD")
+    else if (inst.op == "LOAD")
     {
-        cout << inst.op << " R" << inst.rd << ", R" << inst.rs1 << ", #" << inst.offset << endl;
+        cout << inst.op << " R" << inst.rd << ", " << inst.offset << "(R" << inst.rs1 << ")" << endl;
     }
-    else if(inst.op == "STORE")
+    else if (inst.op == "STORE")
     {
-        cout << inst.op << " R" << inst.rs1 << ", R" << inst.rs2 << ", #" << inst.offset << endl;
+        cout << inst.op << " R" << inst.rs1 << ", " << inst.offset << "(R" << inst.rs2 << ")" << endl;
     }
-    else if(inst.op == "CALL")
+    else if (inst.op == "CALL")
     {
-        cout << inst.op << " #" << inst.label << endl;
+        cout << inst.op << " " << inst.label << endl;
     }
-    else if(inst.op == "RET")
+    else if (inst.op == "RET")
     {
         cout << inst.op << endl;
     }
+    else
+    {
+        cout << "Unknown instruction: " << inst.op << endl;
+    }
 }
+
 
 TomasuloSimulator::TomasuloSimulator(vector<Instruction> instructions, vector<int16_t> memory, int startingPC, int robCapacity, unordered_map<string, int> stationCount)
 : instructions(instructions), memory(memory), PC(startingPC), robCapacity(robCapacity)
@@ -116,6 +121,9 @@ TomasuloSimulator::TomasuloSimulator(vector<Instruction> instructions, vector<in
         }
     }
 
+    for(auto &inst: instructions) {
+        printInstruction(inst);
+    }
 
 }
 
@@ -138,19 +146,16 @@ void TomasuloSimulator::simulate() {
 
         cout<<"RESERVATION STATIONS"<<endl;
         for (auto &rs : rsList) {
-            if (rs.name+rs.unit == "BEQ" || rs.name+rs.unit == "ADD/ADDI1") {
+            if (rs.name+rs.unit == "STORE1" || rs.name+rs.unit == "BEQ1" || rs.name+rs.unit == "ADD/ADDI1" || rs.name+rs.unit == "NAND1" || rs.name+rs.unit == "LOAD1" || rs.name+rs.unit == "MUL1"){
                 printReservationStation(rs);
             }
         }
         printROB(rob.front());
         printRegisters(registers);
 
-        if(counter > 25) {
-            break;
-        }
     }
 
-    printRegisters(registers);
+//    printRegisters(registers);
     cout<<"Memory "<<memory[0]<<endl;
 }
 
@@ -179,6 +184,7 @@ void TomasuloSimulator::issue() {
     }
 
 
+
     // Find a free RS, issue the instruction, and increment PC
     for (auto &rs : rsList) {
         if (rs.issued() && !rs.isBusy()) { // If RS is not busy and operation matches
@@ -204,15 +210,27 @@ void TomasuloSimulator::issue() {
                 rs.Qk = destRegs[inst.rs2];
 
                 // Set Vj and Vk
-                if (inst.rs1 != -1 && rs.Qj == cdb.tag) {   // If rs1 is not -1, set Vj and Qj
-                    rs.Vj = cdb.tag;
-                } else {
+                if (rs.Qj == cdb.tag && rs.makeOperand1ReadyFlag) {   // If rs1 is not -1, set Vj and Qj
+                    rs.Vj = cdb.value;
+                    rs.Qj = 0;
+                }
+                else if(rs.Qj == 0)
+                {
+                    rs.Vj = registers[inst.rs1];
+                }
+                else {
                     rs.Vj = 0;
                 }
 
                 if (inst.rs2 != -1 && rs.Qk == cdb.tag) {   // If rs2 is not -1, set Vk and Qk
-                    rs.Vk = cdb.tag;
-                } else {
+                    rs.Vk = cdb.value;
+                    rs.Qk = 0;
+                }
+                else if(rs.Qk == 0)
+                {
+                    rs.Vk = registers[inst.rs2];
+                }
+                else {
                     rs.Vk = 0;
                 }
             }
@@ -237,15 +255,27 @@ void TomasuloSimulator::issue() {
                 rs.Qk = destRegs[inst.rs2];
 
                 // Set Vj and Vk
-                if (inst.rs1 != -1 && rs.Qj == cdb.tag) {   // If rs1 is not -1, set Vj and Qj
+                if (rs.Qj == cdb.tag) {   // If rs1 is not -1, set Vj and Qj
                     rs.Vj = cdb.value; // FIXME: retrieve value from CDB if Qj is not 0
-                } else {
+                    rs.Qj = 0;
+                }
+                else if(rs.Qj == 0)
+                {
+                    rs.Vj = registers[inst.rs1];
+                }
+                else {
                     rs.Vj = 0;
                 }
 
                 if (inst.rs2 != -1 && rs.Qk == cdb.tag) {   // If rs2 is not -1, set Vk and Qk
                     rs.Vk = cdb.value;
-                } else {
+                    rs.Qk = 0;
+                }
+                else if(rs.Qk == 0)
+                {
+                    rs.Vk = registers[inst.rs2];
+                }
+                else {
                     rs.Vk = 0;
                 }
             }  // Create a new ROB entry
@@ -256,6 +286,23 @@ void TomasuloSimulator::issue() {
         }
     }
 
+    for(auto &rs: rsList)
+    {
+        if(!rs.isReady() && rs.issued())
+        {
+            if(rs.makeOperand1ReadyFlag)
+            {
+                rs.Vj = cdb.value;
+                rs.Qj = 0;
+            }
+            if(rs.makeOperand2ReadyFlag)
+            {
+                rs.Vk = cdb.value;
+                rs.Qk = 0;
+            }
+            rs.setNextStatus(ReservationStation::ISSUED);
+        }
+    }
 
     for(auto &rs: rsList) {
         if(PC < instructions.size())
@@ -264,8 +311,13 @@ void TomasuloSimulator::issue() {
             if (!rs.isBusy() && (rs.name.find(nextInst.op) != string::npos) )
             {
                 rs.setNextStatus(ReservationStation::ISSUED);
-                break;
             }
+
+            if(nextInst.op == "ADDI" && nextInst.rs1 == 0 && nextInst.rd == 0 && nextInst.rs2 == 0 && rs.name == "ADD/ADDI")
+            {
+                rs.setNextStatus(ReservationStation::EMPTY);
+            }
+
         }
 
     }
@@ -281,7 +333,6 @@ void TomasuloSimulator::execute() {
             for (auto &fu : fuList) {   // Find a free FU and start execution
                 if (fu.name.find(rs.op) != string::npos && !fu.isBusy()) {
                     fu.operation = rs.op;
-
                     fu.operand1 = rs.Vj;
                     fu.operand2 = rs.Vk;
                     fu.A = rs.A;
@@ -327,7 +378,6 @@ void TomasuloSimulator::execute() {
             continue;
         }
 
-
         if (rs.isExecuting() && rs.fu->getRemCycles() == 0) {
             if(!cdb.isBusy())
             {
@@ -345,14 +395,17 @@ void TomasuloSimulator::execute() {
 }
 
 void TomasuloSimulator::write() {
+    bool writing = false;
     for (auto &rs : rsList) {
 
         // If RS is writing, update ROB entry and clear RS
         if(rs.op == "STORE" && rs.isWriting())
         {
+            writing = true;
             rs.fu->flush();
             rs.setNextStatus(ReservationStation::EMPTY);
             rs.clear();
+
             continue;
         }
         else if(rs.op == "LOAD" && rs.isWriting() && rs.remCyclesLoad > 0)
@@ -363,52 +416,97 @@ void TomasuloSimulator::write() {
         }
         else if(rs.op == "LOAD" && rs.isWriting() && rs.remCyclesLoad == 0)
         {
+            writing = true;
             int address = rs.fu->getResult(rs.instPC, PC);
             cdb.writeToCDB(memory[address], rs.robTag);
             updateROBEntry(rs.robTag, memory[address], rob);
             for(auto &curRS: rsList) {
                 if(curRS.Qj == rs.robTag) {
+                    curRS.makeOperand1ReadyFlag = true;
                     curRS.Vj = cdb.value;
+                    curRS.Qj = 0;
                 }
                 if(curRS.Qk == rs.robTag) {
+                    curRS.makeOperand2ReadyFlag = true;
                     curRS.Vk = cdb.value;
+                    curRS.Qk = 0;
+                }
+                if (curRS.isBusy() && curRS.isReady() && curRS.issued()) {
+                    curRS.setNextStatus(ReservationStation::EXECUTING);
+
+                    for (auto &fu : fuList) {   // Find a free FU and start execution
+                        if (fu.name.find(curRS.op) != string::npos && !fu.isBusy()) {
+                            fu.operation = curRS.op;
+
+                            fu.operand1 = curRS.Vj;
+                            fu.operand2 = curRS.Vk;
+                            fu.A = curRS.A;
+
+                            FunctionalUnit *fuPointer = &fu;
+                            curRS.setFunctionalUnit(fuPointer);
+
+                            fu.startExec();
+
+                            break;
+                        }
+                    }
                 }
             }
             rs.fu->flush();
             rs.setNextStatus(ReservationStation::EMPTY);
-            destRegs[rs.destination] = 0;
             rs.clear();
-            cdb.clear();
             continue;
         }
         else if(rs.op == "BEQ" && rs.isWriting())
         {
+            writing = true;
             rs.fu->flush();
             updateROBEntry(rs.robTag, cdb.value, rob);
             rs.setNextStatus(ReservationStation::EMPTY);
             rs.clear();
-            cdb.clear();
             continue;
         }
         else if (rs.isWriting()) {
+            writing = true;
             rs.fu->flush();
             updateROBEntry(rs.robTag, cdb.value, rob);
             for(auto &curRS: rsList) {
                 if(curRS.Qj == rs.robTag) {
+                    curRS.makeOperand1ReadyFlag = true;
                     curRS.Vj = cdb.value;
+                    curRS.Qj = 0;
                 }
                 if(curRS.Qk == rs.robTag) {
+                    curRS.makeOperand2ReadyFlag = true;
                     curRS.Vk = cdb.value;
+                    curRS.Qk = 0;
+                }
+                if (curRS.isBusy() && curRS.isReady() && curRS.issued()) {
+                    curRS.setNextStatus(ReservationStation::EXECUTING);
+
+                    for (auto &fu : fuList) {   // Find a free FU and start execution
+                        if (fu.name.find(curRS.op) != string::npos && !fu.isBusy()) {
+                            fu.operation = curRS.op;
+                            fu.operand1 = curRS.Vj;
+                            fu.operand2 = curRS.Vk;
+                            fu.A = curRS.A;
+
+                            FunctionalUnit *fuPointer = &fu;
+                            curRS.setFunctionalUnit(fuPointer);
+                            fu.startExec();
+
+                            break;
+                        }
+                    }
                 }
             }
             rs.setNextStatus(ReservationStation::EMPTY);
-            destRegs[rs.destination] = 0;
             rs.clear();
-            cdb.clear();
             continue;
         }
-    }
 
+
+    }
 
 
     for(auto &rs: rsList) {
@@ -423,15 +521,15 @@ void TomasuloSimulator::write() {
     for(auto &rs: rsList){
         if(!rs.isReady() && rs.issued()) {
             rs.setNextStatus(ReservationStation::ISSUED);
-            rs.Qj = destRegs[rs.reg1];
-            rs.Qk = destRegs[rs.reg2];
         }
     }
+
 }
 
 void TomasuloSimulator::commit() {
     if (!rob.empty() && rob.front().ready) {    // If ROB is not empty and the front entry is ready
         ReorderBuffer entry = rob.front();
+
         if(entry.type == "STORE" && entry.remCycles > 0)
         {
             decrementRemCycle(entry.tag, rob);
@@ -444,7 +542,7 @@ void TomasuloSimulator::commit() {
             memory[entry.value] = registers[entry.dest];
         }
         else{
-            registers[entry.dest] = entry.value;
+            registers[entry.dest] = (entry.dest != 0) ? entry.value : 0;
         }
 
         tags[entry.tag] = false;
@@ -454,10 +552,14 @@ void TomasuloSimulator::commit() {
         if (entry.type == "BEQ" && entry.value != entry.actualPC) {
             rollback(entry.value); // Rollback to the correct PC
         }
+        destRegs[entry.dest] = 0;
+
     }
+
 }
 
 void TomasuloSimulator::rollback(int correctPC) {
+    Instruction correctInst = instructions[correctPC];
     // Flush the ROB
     while (!rob.empty()) {
         rob.pop();
@@ -466,6 +568,8 @@ void TomasuloSimulator::rollback(int correctPC) {
     // Clear reservation stations
     for (auto &rs : rsList) {
         rs.clear();
+        rs.status = ReservationStation::EMPTY;
+        rs.nextStatus = ReservationStation::EMPTY;
     }
 
     // Reset functional units
@@ -473,9 +577,17 @@ void TomasuloSimulator::rollback(int correctPC) {
         fu.flush();
     }
 
+    cdb.clear();
+
+    for(auto &rs: rsList) {
+        if (rs.name.find(correctInst.op) != string::npos )
+        {
+            rs.setNextStatus(ReservationStation::ISSUED);
+            break;
+        }
+    }
     // Reset the PC and other state variables
     PC = correctPC;
-    totalCycles = 0;    // FIXME: Adjust the cycle count
     fuResult = 0;
     fill(tags.begin(), tags.end(), false);
 }
@@ -584,5 +696,11 @@ bool TomasuloSimulator::isFUListEmpty() {
     return true;
 }
 
-
+void setROBFrontReady(queue<ReorderBuffer> &rob)
+{
+    if (!rob.empty()) {
+        ReorderBuffer &entry = rob.front();
+        entry.ready = true;
+    }
+}
 

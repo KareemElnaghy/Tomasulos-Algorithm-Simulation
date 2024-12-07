@@ -32,6 +32,8 @@ public:
     bool readyToWrite = false;
     FunctionalUnit *fu; // functional unit executing the instruction
     int remCyclesLoad;
+    bool makeOperand1ReadyFlag = false;
+    bool makeOperand2ReadyFlag = false;
 
     ReservationStation(string name, string unit);
     void setFunctionalUnit(FunctionalUnit *fu);

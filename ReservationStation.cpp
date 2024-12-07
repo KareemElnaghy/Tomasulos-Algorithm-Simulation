@@ -19,10 +19,10 @@ void ReservationStation::clear() {
     Qj = 0;
     Qk = 0;
     A = 0;
+    fu = nullptr;
     destination = 0;
     readyToWrite = false;
     remCyclesLoad = 4;
-
 }
 
 bool ReservationStation::isBusy() {
