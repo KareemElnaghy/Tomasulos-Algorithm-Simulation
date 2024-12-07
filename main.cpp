@@ -95,8 +95,6 @@ int main() {
     instructions.clear();
     instructions = parseInstructions("C:\\Users\\Asus\\CLionProjects\\Tomasulos-Algorithm-Simulation\\testcase1.txt");
 
-
-
     vector <int16_t> memory (64*1024, 0);
     memory[0] = 10;
     memory[1] = 20;
@@ -106,21 +104,33 @@ int main() {
     unordered_map<string, int> stationCount;
     unordered_map<string, int> latency;
 
-    stationCount["ADD/ADDI"] = 3;
-    stationCount["MUL"] = 2;
-    stationCount["NAND"] = 1;
-    stationCount["BEQ"] = 1;
-    stationCount["LOAD"] = 2;
-    stationCount["STORE"] = 1;
-    stationCount["CALL/RET"] = 1;
+    cout<<"Enter the number of ADD/ADDI stations: ";
+    cin>>stationCount["ADD/ADDI"];
+    cin>>latency["ADD/ADDI"];
 
-    latency["ADD/ADDI"] = 2;
-    latency["MUL"] = 8;
-    latency["NAND"] = 1;
-    latency["BEQ"] = 1;
-    latency["LOAD"] = 2;
-    latency["STORE"] = 2;
-    latency["CALL/RET"] = 1;
+    cout<<"Enter the number of MUL stations: ";
+    cin>>stationCount["MUL"];
+    cin>>latency["MUL"];
+
+    cout<<"Enter the number of NAND stations: ";
+    cin>>stationCount["NAND"];
+    cin>>latency["NAND"];
+
+    cout<<"Enter the number of BEQ stations: ";
+    cin>>stationCount["BEQ"];
+    cin>>latency["BEQ"];
+
+    cout<<"Enter the number of LOAD stations: ";
+    cin>>stationCount["LOAD"];
+    cin>>latency["LOAD"];
+
+    cout<<"Enter the number of STORE stations: ";
+    cin>>stationCount["STORE"];
+    cin>>latency["STORE"];
+
+    cout<<"Enter the number of CALL/RET stations: ";
+    cin>>stationCount["CALL/RET"];
+    cin>>latency["CALL/RET"];
 
     TomasuloSimulator simulator(instructions, memory, startingPC, robCapacity, stationCount, latency);
 
