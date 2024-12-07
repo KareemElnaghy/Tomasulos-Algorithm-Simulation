@@ -1,8 +1,8 @@
 //
 // Created by Asus on 12/4/2024.
 //
-int *debug;
 #include "TomasuloSimulator.h"
+#include <iomanip>
 ReservationStation *rsPointer;
 TomasuloSimulator::TomasuloSimulator() {
     PC = 0;
@@ -111,9 +111,34 @@ void printCycleMap(Instruction inst)
     cout << "COMMITTED: " << inst.getCommitCycle() << endl;
 }
 
+void printTable(vector<Instruction>& instructions) {
+    // Print header
+    std::cout << std::setw(10) << "Instr"
+              << std::setw(10) << "Issued"
+              << std::setw(15) << "Started Exec"
+              << std::setw(15) << "Finished Exec"
+              << std::setw(10) << "Written"
+              << std::setw(10) << "Committed" << std::endl;
+
+    std::cout << std::string(70, '-') << std::endl;
+
+    // Print details for each instruction
+    for (auto& inst : instructions) {
+        std::cout << std::setw(10) << inst.op
+                  << std::setw(10) << inst.getIssueCycle()
+                  << std::setw(15) << inst.getStartExecCycle()
+                  << std::setw(15) << inst.getFinishExecCycle()
+                  << std::setw(10) << inst.getWriteCycle()
+                  << std::setw(10) << inst.getCommitCycle() << std::endl;
+    }
+
+    std::cout << std::string(70, '-') << std::endl;
+}
 
 
-TomasuloSimulator::TomasuloSimulator(vector<Instruction> instructions, vector<int16_t> memory, int startingPC, int robCapacity, unordered_map<string, int> stationCount)
+
+TomasuloSimulator::TomasuloSimulator(vector<Instruction> instructions, vector<int16_t> memory, int startingPC, int robCapacity, unordered_map<string, int> stationCount,
+                                     unordered_map<string, int> latency)
 : instructions(instructions), memory(memory), PC(startingPC), robCapacity(robCapacity)
 {
     totalCycles = 0;
@@ -125,15 +150,12 @@ TomasuloSimulator::TomasuloSimulator(vector<Instruction> instructions, vector<in
     for(auto &p: stationCount) {
         for(int i=0; i<p.second; i++) {
             rsList.emplace_back(p.first, to_string(i+1));
-            FunctionalUnit fu(p.first, to_string(i+1));
-            fuList.emplace_back(p.first, to_string(i+1));
+            FunctionalUnit fu(p.first, to_string(i+1), latency[p.first]);
+            fuList.emplace_back(fu);
         }
     }
 
 
-//    for(auto &inst: instructions) {
-//        printInstruction(inst);
-//    }
 
 }
 
@@ -142,7 +164,6 @@ void TomasuloSimulator::simulate() {
 //    int counter = 0;
 
     while (PC < instructions.size() || !rob.empty() || !isRSListEmpty() || !isFUListEmpty()) {
-        cout<<"----------------- Cycle "<<totalCycles<<" -----------------"<<endl;
         advanceCycle(); // Advance the cycle
         issue();        // Issue the instruction
         execute();      // Execute the instruction
@@ -158,19 +179,25 @@ void TomasuloSimulator::simulate() {
         totalCycles++;  // Increment the cycle count
 
         for(auto &rs: rsList) {
-            printReservationStation(rs);
+            if(rs.name == "LOAD")
+                printReservationStation(rs);
         }
 
     }
-    for(auto &inst: instructions)
-    {
-        printInstruction(inst);
-        printCycleMap(inst);
-        cout<<endl;
-    }
 
-//    for(int i = 0; i< 6; i++)
-//        cout<<"Memory["<<i<<"]: "<<memory[i]<<endl;
+    float branchMissPredictionRate = (totalBranches == 0)?(float)totalBranchMispredictions/totalBranches:0;
+
+    printTable(instructions);
+    cout<<endl;
+    cout<<"Performance Metrics"<<endl;
+    cout<<"Total Cycles: "<<totalCycles<<endl;
+    cout<<"IPC: "<<(float)totalInstructions/totalCycles<<endl;
+    cout<<"Branch Misprediction Percentage: "<<branchMissPredictionRate<<endl;
+
+    for(int i = 0; i< 4; i++)
+        cout<<"Memory["<<i<<"]: "<<memory[i]<<endl;
+    printRegisters(registers);
+    cout<<endl;
 }
 
 
@@ -471,7 +498,6 @@ void TomasuloSimulator::write() {
                 rs.remCyclesLoad--;
                 rs.setNextStatus(ReservationStation::WRITING);
                 cdb.currBusy = false;
-                instructions[rs.instPC].setWriteCycle(totalCycles); // FIXME: set write cycle
                 continue;
             } else if (rs.op == "LOAD" && rs.remCyclesLoad == 0) {
                 int address = rs.fu->getResult(rs.instPC, PC);
@@ -575,6 +601,7 @@ void TomasuloSimulator::write() {
                 rs.setNextStatus(ReservationStation::EMPTY);
                 rs.clear();
                 cdb.currBusy = false;
+                instructions[rs.instPC].setWriteCycle(totalCycles); // FIXME: set write cycle
                 continue;
             }
 

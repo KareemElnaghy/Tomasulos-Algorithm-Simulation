@@ -93,7 +93,7 @@ vector<Instruction> parseInstructions(const string &filename) {
 int main() {
     vector<Instruction> instructions;
     instructions.clear();
-    instructions = parseInstructions("C:\\Users\\Asus\\CLionProjects\\Tomasulos-Algorithm-Simulation\\instruction.txt");
+    instructions = parseInstructions("C:\\Users\\Asus\\CLionProjects\\Tomasulos-Algorithm-Simulation\\testcase1.txt");
 
 
 
@@ -104,17 +104,25 @@ int main() {
     int startingPC = 0;
     int robCapacity = 6;
     unordered_map<string, int> stationCount;
+    unordered_map<string, int> latency;
+
     stationCount["ADD/ADDI"] = 3;
     stationCount["MUL"] = 2;
     stationCount["NAND"] = 1;
     stationCount["BEQ"] = 1;
-    stationCount["LOAD"] = 1;
+    stationCount["LOAD"] = 2;
     stationCount["STORE"] = 1;
     stationCount["CALL/RET"] = 1;
 
+    latency["ADD/ADDI"] = 2;
+    latency["MUL"] = 8;
+    latency["NAND"] = 1;
+    latency["BEQ"] = 1;
+    latency["LOAD"] = 2;
+    latency["STORE"] = 2;
+    latency["CALL/RET"] = 1;
 
-    TomasuloSimulator simulator(instructions, memory, startingPC, robCapacity, stationCount);
-
+    TomasuloSimulator simulator(instructions, memory, startingPC, robCapacity, stationCount, latency);
 
     simulator.simulate();
 

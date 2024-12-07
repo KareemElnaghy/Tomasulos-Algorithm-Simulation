@@ -23,7 +23,7 @@ public:
     bool busy;
     //ReservationStation *rs;
 
-    FunctionalUnit(string name, string unit);
+    FunctionalUnit(string name, string unit, int latency);
     bool isBusy();
     void execute();
     int getRemCycles();

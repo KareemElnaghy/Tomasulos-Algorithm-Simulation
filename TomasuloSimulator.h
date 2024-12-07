@@ -41,7 +41,7 @@ private:
 
 public:
     TomasuloSimulator();
-    TomasuloSimulator(vector<Instruction> instructions, vector <int16_t> memory, int startingPC, int robCapacity, unordered_map<string, int> stationCount);
+    TomasuloSimulator(vector<Instruction> instructions, vector <int16_t> memory, int startingPC, int robCapacity, unordered_map<string, int> stationCount, unordered_map<string, int> latency);
 
     void simulate();
 

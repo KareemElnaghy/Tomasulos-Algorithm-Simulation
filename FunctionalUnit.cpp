@@ -4,22 +4,22 @@
 
 #include "FunctionalUnit.h"
 
-FunctionalUnit::FunctionalUnit(string name, string unit): name(name), unit(unit), remainingCycles(0), operand1(0), operand2(0), A(0) {
+FunctionalUnit::FunctionalUnit(string name, string unit, int lat): name(name), unit(unit), remainingCycles(0), operand1(0), operand2(0), A(0) {
     operation = "";
     if(name == "ADD/ADDI")
-        latency = 2;
+        latency = lat;
     else if(name == "MUL")
-        latency = 8;
+        latency = lat;
     else if(name == "NAND")
-        latency = 1;
+        latency = lat;
     else if(name == "BEQ")
-        latency = 1;
+        latency = lat;
     else if(name == "LOAD")
-        latency = 2;
+        latency = lat;
     else if(name == "STORE")
-        latency = 2;
+        latency = lat;
     else if(name == "CALL/RET")
-        latency = 1;
+        latency = lat;
     else
         latency = 0;
 }
