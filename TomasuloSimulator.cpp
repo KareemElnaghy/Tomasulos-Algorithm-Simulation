@@ -66,41 +66,48 @@ void printRegisters(vector<int> registers)
     cout << endl;
 }
 
-void printInstruction(const Instruction& inst)
+#include <sstream>
+
+string getInstruction(const Instruction& inst)
 {
+    stringstream ss;
+
     if (inst.op == "ADD" || inst.op == "MUL" || inst.op == "NAND")
     {
-        cout << inst.op << " R" << inst.rd << ", R" << inst.rs1 << ", R" << inst.rs2 << endl;
+        ss << inst.op << " R" << inst.rd << ", R" << inst.rs1 << ", R" << inst.rs2;
     }
     else if (inst.op == "ADDI")
     {
-        cout << inst.op << " R" << inst.rd << ", R" << inst.rs1 << ", " << inst.offset << endl;
+        ss << inst.op << " R" << inst.rd << ", R" << inst.rs1 << ", " << inst.offset;
     }
     else if (inst.op == "BEQ")
     {
-        cout << inst.op << " R" << inst.rs1 << ", R" << inst.rs2 << ", " << inst.offset << endl;
+        ss << inst.op << " R" << inst.rs1 << ", R" << inst.rs2 << ", " << inst.offset;
     }
     else if (inst.op == "LOAD")
     {
-        cout << inst.op << " R" << inst.rd << ", " << inst.offset << "(R" << inst.rs1 << ")" << endl;
+        ss << inst.op << " R" << inst.rd << ", " << inst.offset << "(R" << inst.rs1 << ")";
     }
     else if (inst.op == "STORE")
     {
-        cout << inst.op << " R" << inst.rs1 << ", " << inst.offset << "(R" << inst.rs2 << ")" << endl;
+        ss << inst.op << " R" << inst.rs1 << ", " << inst.offset << "(R" << inst.rs2 << ")";
     }
     else if (inst.op == "CALL")
     {
-        cout << inst.op << " " << inst.label << endl;
+        ss << inst.op << " " << inst.label;
     }
     else if (inst.op == "RET")
     {
-        cout << inst.op << endl;
+        ss << inst.op;
     }
     else
     {
-        cout << "Unknown instruction: " << inst.op << endl;
+        ss << "Unknown instruction: " << inst.op;
     }
+
+    return ss.str();
 }
+
 
 void printCycleMap(Instruction inst)
 {
@@ -111,28 +118,39 @@ void printCycleMap(Instruction inst)
     cout << "COMMITTED: " << inst.getCommitCycle() << endl;
 }
 
-void printTable(vector<Instruction>& instructions) {
-    // Print header
-    std::cout << std::setw(10) << "Instr"
-              << std::setw(10) << "Issued"
-              << std::setw(15) << "Started Exec"
-              << std::setw(15) << "Finished Exec"
-              << std::setw(10) << "Written"
-              << std::setw(10) << "Committed" << std::endl;
 
-    std::cout << std::string(70, '-') << std::endl;
+void printTable(vector<Instruction>& instructions) {
+    // Adjusted column widths for better alignment
+    const int instrWidth = 20;
+    const int issuedWidth = 12;
+    const int execStartWidth = 15;
+    const int execFinishWidth = 15;
+    const int writtenWidth = 12;
+    const int committedWidth = 12;
+
+    // Print header
+    cout << setw(instrWidth) << "Instruction"
+         << setw(issuedWidth) << "Issued"
+         << setw(execStartWidth) << "Started Exec"
+         << setw(execFinishWidth) << "Finished Exec"
+         << setw(writtenWidth) << "Written"
+         << setw(committedWidth) << "Committed" << endl;
+
+    // Print a separator line with dashes
+    cout << string(instrWidth + issuedWidth + execStartWidth + execFinishWidth + writtenWidth + committedWidth, '-') << endl;
 
     // Print details for each instruction
     for (auto& inst : instructions) {
-        std::cout << std::setw(10) << inst.op
-                  << std::setw(10) << inst.getIssueCycle()
-                  << std::setw(15) << inst.getStartExecCycle()
-                  << std::setw(15) << inst.getFinishExecCycle()
-                  << std::setw(10) << inst.getWriteCycle()
-                  << std::setw(10) << inst.getCommitCycle() << std::endl;
+        cout << setw(instrWidth) << getInstruction(inst) // Updated width
+             << setw(issuedWidth) << inst.getIssueCycle()
+             << setw(execStartWidth) << inst.getStartExecCycle()
+             << setw(execFinishWidth) << inst.getFinishExecCycle()
+             << setw(writtenWidth) << inst.getWriteCycle()
+             << setw(committedWidth) << inst.getCommitCycle() << endl;
     }
 
-    std::cout << std::string(70, '-') << std::endl;
+    // Print a separator line at the bottom
+    cout << string(instrWidth + issuedWidth + execStartWidth + execFinishWidth + writtenWidth + committedWidth, '-') << endl;
 }
 
 
@@ -142,6 +160,8 @@ TomasuloSimulator::TomasuloSimulator(vector<Instruction> instructions, vector<in
 : instructions(instructions), memory(memory), PC(startingPC), robCapacity(robCapacity)
 {
     totalCycles = 0;
+    totalBranches = 0;
+    totalBranchMispredictions = 0;
     registers.resize(8, 0);
     destRegs.resize(8, 0);
     fuResult = 0;
@@ -155,43 +175,50 @@ TomasuloSimulator::TomasuloSimulator(vector<Instruction> instructions, vector<in
         }
     }
 
-
-
 }
 
 void TomasuloSimulator::simulate() {
     // TODO: Implement all the various counters
-//    int counter = 0;
+    int counter = 0;
 
     while (PC < instructions.size() || !rob.empty() || !isRSListEmpty() || !isFUListEmpty()) {
+//        cout<<"====Cycle "<<totalCycles<<"======"<<endl;
+//        cout<<"PC: "<<PC<<endl;
         advanceCycle(); // Advance the cycle
         issue();        // Issue the instruction
         execute();      // Execute the instruction
         write();        // Write the result to the CDB
         commit();       // Commit the result to the register
-
-        for(auto &rs: rsList) {
-            if(rs.getStatus() == "ISSUED")
-            {
-                instructions[rs.instPC].setIssueCycle(totalCycles);
-            }
-        }
+        counter++;
+//        for(auto &rs: rsList) {
+//            if(rs.getStatus() == "ISSUED")
+//            {
+//                instructions[rs.instPC].setIssueCycle(totalCycles);
+//            }
+//        }
         totalCycles++;  // Increment the cycle count
 
-        for(auto &rs: rsList) {
-            if(rs.name == "LOAD")
-                printReservationStation(rs);
-        }
+//        for(auto &rs: rsList) {
+//            if(rs.name == "CALL/RET" || rs.name == "ADD/ADDI" || rs.name == "NAND" || rs.name == "BEQ")
+//            printReservationStation(rs);
+//        }
+//
+//        if(counter == 30)
+//        {
+//            break;
+//        }
 
     }
 
-    float branchMissPredictionRate = (totalBranches == 0)?(float)totalBranchMispredictions/totalBranches:0;
+    float branchMissPredictionRate = (totalBranches != 0)?((float)totalBranchMispredictions/totalBranches)*100:0;
 
     printTable(instructions);
     cout<<endl;
     cout<<"Performance Metrics"<<endl;
-    cout<<"Total Cycles: "<<totalCycles<<endl;
-    cout<<"IPC: "<<(float)totalInstructions/totalCycles<<endl;
+    cout<<"Total Cycles: "<<totalCycles-1<<endl;
+    cout<<"IPC: "<<(float)totalInstructions/totalCycles-1<<endl;
+    cout<<"Branches: "<<totalBranches<<endl;
+    cout<<"Branch Mispredictions: "<<totalBranchMispredictions<<endl;
     cout<<"Branch Misprediction Percentage: "<<branchMissPredictionRate<<endl;
 
     for(int i = 0; i< 4; i++)
@@ -214,6 +241,10 @@ bool TomasuloSimulator::hasFreeRS(Instruction inst) {   // Check if there is a f
 void TomasuloSimulator::issue() {
     if (PC >= instructions.size()) return;  // If PC is out of bounds, return
     Instruction inst = instructions[PC];
+    if(inst.op == "BEQ")
+    {
+        totalBranches++;
+    }
 
     // If ROB is full or no free RS, stall
     if (rob.size() >= robCapacity || !hasFreeRS(inst)) return;
@@ -288,18 +319,18 @@ void TomasuloSimulator::issue() {
                 rs.instPC = PC;
                 rs.destination = dest;
                 rs.reg1 = (rs.op == "RET")? 1 : 0;
-                rs.Qj = destRegs[inst.rs1];
 
-                if (rs.Qj == cdb.tag) {
-                    rs.Vj = cdb.value;
-                    rs.Qj = 0;
-                }
-                else if(rs.Qj == 0)
-                {
-                    rs.Vj = registers[inst.rs1];
-                }
-                else {
-                    rs.Vj = 0;
+                if(rs.op == "RET"){
+                    rs.Qj = destRegs[inst.rs1];
+
+                    if (rs.Qj == cdb.tag) {
+                        rs.Vj = cdb.value;
+                        rs.Qj = 0;
+                    } else if (rs.Qj == 0) {
+                        rs.Vj = registers[inst.rs1];
+                    } else {
+                        rs.Vj = 0;
+                    }
                 }
                 rs.reg2 = 0;
             }
@@ -612,7 +643,6 @@ void TomasuloSimulator::write() {
         if(rs.isReadyToWrite() && !cdb.isBusy())
         {
             rs.readyToWrite = false;
-            printFU(*rs.fu);
             fuResult = rs.fu->getResult(rs.instPC, PC);
             cdb.writeToCDB(fuResult, rs.robTag);
         }
@@ -640,10 +670,6 @@ void TomasuloSimulator::commit() {
         rob.pop();
         instructions[entry.actualPC-1].setCommitCycle(totalCycles); // FIXME: set commit cycle
         totalInstructions++;
-        if(entry.type == "BEQ")
-        {
-            totalBranches++;
-        }
         if(entry.type == "STORE")
         {
             memory[entry.value] = registers[entry.dest];
