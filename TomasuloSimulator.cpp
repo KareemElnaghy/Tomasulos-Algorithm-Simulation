@@ -161,6 +161,7 @@ TomasuloSimulator::TomasuloSimulator(vector<Instruction> instructions, vector<in
 {
     totalCycles = 0;
     totalBranches = 0;
+    totalInstructions = 0;
     totalBranchMispredictions = 0;
     registers.resize(8, 0);
     destRegs.resize(8, 0);
@@ -181,33 +182,28 @@ void TomasuloSimulator::simulate() {
     // TODO: Implement all the various counters
     int counter = 0;
 
+
     while (PC < instructions.size() || !rob.empty() || !isRSListEmpty() || !isFUListEmpty()) {
 //        cout<<"====Cycle "<<totalCycles<<"======"<<endl;
-//        cout<<"PC: "<<PC<<endl;
+//        cout<<"Current PC: "<<PC<<endl;
         advanceCycle(); // Advance the cycle
         issue();        // Issue the instruction
         execute();      // Execute the instruction
         write();        // Write the result to the CDB
         commit();       // Commit the result to the register
         counter++;
-//        for(auto &rs: rsList) {
-//            if(rs.getStatus() == "ISSUED")
-//            {
-//                instructions[rs.instPC].setIssueCycle(totalCycles);
-//            }
-//        }
+        for(auto &rs: rsList) {
+            if(rs.getStatus() == "ISSUED")
+            {
+                instructions[rs.instPC].setIssueCycle(totalCycles);
+            }
+        }
         totalCycles++;  // Increment the cycle count
-
 //        for(auto &rs: rsList) {
-//            if(rs.name == "CALL/RET" || rs.name == "ADD/ADDI" || rs.name == "NAND" || rs.name == "BEQ")
 //            printReservationStation(rs);
-//        }
 //
-//        if(counter == 30)
-//        {
-//            break;
 //        }
-
+//        printRegisters(registers);
     }
 
     float branchMissPredictionRate = (totalBranches != 0)?((float)totalBranchMispredictions/totalBranches)*100:0;
@@ -216,7 +212,8 @@ void TomasuloSimulator::simulate() {
     cout<<endl;
     cout<<"Performance Metrics"<<endl;
     cout<<"Total Cycles: "<<totalCycles-1<<endl;
-    cout<<"IPC: "<<(float)totalInstructions/totalCycles-1<<endl;
+    cout<<"Total Instructions: "<<totalInstructions<<endl;
+    cout<<"IPC: "<<(float)totalInstructions/(totalCycles-1)<<endl;
     cout<<"Branches: "<<totalBranches<<endl;
     cout<<"Branch Mispredictions: "<<totalBranchMispredictions<<endl;
     cout<<"Branch Misprediction Percentage: "<<branchMissPredictionRate<<endl;
@@ -307,32 +304,58 @@ void TomasuloSimulator::issue() {
             }
             else if(rs.name == "CALL/RET")
             {
-                // If CALL destination is R1 and sources are 0, if RET destination is R0 and Source is 1
-                int dest = (rs.op == "CALL") ? 1 : 0; // if CALL we write to R1
-                ReorderBuffer robEntry(tag, inst.op, dest, PC+1);  // Create a new ROB entry
-                rob.push(robEntry); // Push the ROB entry to the ROB
-                rs.robTag = tag;
-                rs.busy = true;
-                rs.op = inst.op;
-                rs.A = (rs.op == "CALL")? inst.label : 0;
-                destRegs[dest] = (rs.op == "CALL")? tag : destRegs[dest];
-                rs.instPC = PC;
-                rs.destination = dest;
-                rs.reg1 = (rs.op == "RET")? 1 : 0;
-
-                if(rs.op == "RET"){
-                    rs.Qj = destRegs[inst.rs1];
-
-                    if (rs.Qj == cdb.tag) {
-                        rs.Vj = cdb.value;
-                        rs.Qj = 0;
-                    } else if (rs.Qj == 0) {
-                        rs.Vj = registers[inst.rs1];
-                    } else {
-                        rs.Vj = 0;
-                    }
+                if(inst.op == "CALL")
+                {
+                    ReorderBuffer robEntry(tag, inst.op, 1, PC+1);  // Create a new ROB entry
+                    rob.push(robEntry); // Push the ROB entry to the ROB
+                    rs.robTag = tag;
+                    rs.busy = true;
+                    rs.op = inst.op;
+                    rs.A = inst.label;
+                    rs.instPC = PC;
+                    rs.destination = 1;
+                    rs.reg1 = 0;
+                    rs.reg2 = 0;
                 }
-                rs.reg2 = 0;
+                else
+                {
+                    ReorderBuffer robEntry(tag, inst.op, 0, PC+1);  // Create a new ROB entry
+                    rob.push(robEntry); // Push the ROB entry to the ROB
+                    rs.robTag = tag;
+                    rs.busy = true;
+                    rs.op = inst.op;
+                    rs.A = 0;
+                    rs.instPC = PC;
+                    rs.destination = 0;
+                    rs.reg1 = 1;
+                    rs.reg2 = 0;
+                }
+//                // If CALL destination is R1 and sources are 0, if RET destination is R0 and Source is 1
+//                int dest = (rs.op == "CALL") ? 1 : 0; // if CALL we write to R1
+//                ReorderBuffer robEntry(tag, inst.op, dest, PC+1);  // Create a new ROB entry
+//                rob.push(robEntry); // Push the ROB entry to the ROB
+//                rs.robTag = tag;
+//                rs.busy = true;
+//                rs.op = inst.op;
+//                rs.A = (rs.op == "CALL")? inst.label : 0;
+//                destRegs[dest] = (rs.op == "CALL")? tag : destRegs[dest];
+//                rs.instPC = PC;
+//                rs.destination = dest;
+//                rs.reg1 = (rs.op == "RET")? 1 : 0;
+//
+//                if(rs.op == "RET"){
+//                    rs.Qj = destRegs[inst.rs1];
+//
+//                    if (rs.Qj == cdb.tag) {
+//                        rs.Vj = cdb.value;
+//                        rs.Qj = 0;
+//                    } else if (rs.Qj == 0) {
+//                        rs.Vj = registers[inst.rs1];
+//                    } else {
+//                        rs.Vj = 0;
+//                    }
+//                }
+//                rs.reg2 = 0;
             }
             else {
                 ReorderBuffer robEntry(tag, inst.op, inst.rd, PC + 1);
@@ -669,7 +692,6 @@ void TomasuloSimulator::commit() {
 
         rob.pop();
         instructions[entry.actualPC-1].setCommitCycle(totalCycles); // FIXME: set commit cycle
-        totalInstructions++;
         if(entry.type == "STORE")
         {
             memory[entry.value] = registers[entry.dest];
@@ -691,7 +713,7 @@ void TomasuloSimulator::commit() {
             registers[1] = (entry.type == "CALL") ? entry.extraValue : registers[1];
         }
         destRegs[entry.dest] = 0;
-
+        totalInstructions++;
     }
     if(!rob.empty() && rob.front().willBeReady)
     {
@@ -702,6 +724,8 @@ void TomasuloSimulator::commit() {
 
 void TomasuloSimulator::rollback(int correctPC) {
     Instruction correctInst = instructions[correctPC];
+    totalInstructions -= (PC - correctPC);
+
     // Flush the ROB
     while (!rob.empty()) {
         rob.pop();
