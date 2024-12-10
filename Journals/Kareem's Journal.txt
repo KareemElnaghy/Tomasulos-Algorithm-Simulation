@@ -1,0 +1,18 @@
+Kareem's Journal
+
+Dec 6, 3:00 PM: Created the Reorder Buffer (ROB) to track instructions and their statuses throughout the pipeline.
+
+Dec 6, 3:30 PM: Developed the Reservation Station class to hold instructions waiting for operands before execution.
+
+Dec 6, 4:45 PM: Implemented NAND, LOAD, STORE, BEQ, CALL, and RET instructions, with special handling for branching.
+
+Dec 7, 9:00 PM: Debugging the Simulation Results Cycle by Cycle
+
+Dec 7, 9:15 PM: Developed the Display Table function to show instruction cycles in a readable format.
+
+Dec 7, 9:30 PM: Worked on computing performance metrics, including cycle count and execution latency.
+
+Dec 7, 10:30 PM: Conducted testing to ensure correct instruction execution and pipeline behavior.
+
+Dec 7, 11:30 PM: Completed the report
+

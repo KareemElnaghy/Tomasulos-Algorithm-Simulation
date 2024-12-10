@@ -1,0 +1,15 @@
+Jana's Journal
+
+Dec 5, 5:00 PM: Created the Common Data Bus (CDB) class to manage results and update destination registers.
+
+Dec 5, 6:00 PM: Developed the Functional Unit class to execute operations and send results back via the CDB.
+
+Dec 5, 8:00 PM: Built the Instruction class to handle different instruction types and track cycle times.
+
+Dec 6, 10:00 AM: Implemented and tested ADD, ADDI, and MUL instructions with proper operand handling.
+
+Dec 6, 6:30 PM: Added a Bonus Parsing Function to accept user input for instruction and pipeline configurations.
+
+Dec 7, 7:30 PM: Created user input functionality to interact with the simulation and configure instruction types.
+
+Dec 7, 11:30 PM: Completed the report
