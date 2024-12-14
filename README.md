@@ -30,6 +30,7 @@ Release Notes:
 4. **What Does Not Work:**
    - Speculative execution for branches is not fully optimized and may introduce performance issues for some test cases.
    - Inconsistent functionality with CALL and BEQ.
+   - Our program failed to run some test cases, in particular, ones that consisted of loops and extreme boundary cases.
 
 5. **Known Limitations:**
    - Currently only a subset of RiSC-16 instructions are supported. Some complex instructions and optimizations ave not been implemented.
